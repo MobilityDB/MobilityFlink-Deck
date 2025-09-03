@@ -1,4 +1,4 @@
-# Visualisation real time
+# Real time visualization 
 
 Ce répertoire regroupe les scripts d’ingestion qui alimentent Kafka à partir de différentes sources (HTTP batch et MQTT). Ils produisent des messages géolocalisés prêts à être consommés par la pipeline (Flink, MobilityDB/PostGIS, WebSocket vers Deck.gl).
 
@@ -255,7 +255,7 @@ export WEBSOCKET_HOST="0.0.0.0"
 export WEBSOCKET_PORT=8082
 
 python websocket_server.py
-# Le serveur écoute sur ws://0.0.0.0:8082
+# Le serveur écoute sur 0.0.0.0:8082
 ```
 
 
