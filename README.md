@@ -1,7 +1,5 @@
 # Real time visualization 
 
-Ce répertoire regroupe les scripts d’ingestion qui alimentent Kafka à partir de différentes sources (HTTP batch et MQTT). Ils produisent des messages géolocalisés prêts à être consommés par la pipeline (Flink, MobilityDB/PostGIS, WebSocket vers Deck.gl).
-
 ## Demo
 
 ![Demo animation](./demo.gif)
@@ -9,6 +7,7 @@ Ce répertoire regroupe les scripts d’ingestion qui alimentent Kafka à partir
 
 ## Architecture (ingestion)
 
+La partie ingestion regroupe les scripts d’ingestion qui alimentent Kafka à partir de différentes sources (HTTP batch et MQTT). Ils produisent des messages géolocalisés prêts à être consommés par la pipeline (Flink, MobilityDB/PostGIS, WebSocket vers Deck.gl).
 ```
 [Clients HTTP/JSON] ──> Flask API (/ingest/location) ──> Kafka (locations_topic)
                                      
@@ -28,8 +27,6 @@ Installez les dépendances :
 ```bash
 pip install flask kafka-python paho-mqtt requests
 ```
-
-
 
 
 ### 1) API HTTP — ingestion batch
