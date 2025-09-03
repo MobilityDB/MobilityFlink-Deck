@@ -2,6 +2,11 @@
 
 Ce répertoire regroupe les scripts d’ingestion qui alimentent Kafka à partir de différentes sources (HTTP batch et MQTT). Ils produisent des messages géolocalisés prêts à être consommés par la pipeline (Flink, MobilityDB/PostGIS, WebSocket vers Deck.gl).
 
+## Demo
+
+![Demo animation](./demo.gif)
+
+
 ## Architecture (ingestion)
 
 ```
