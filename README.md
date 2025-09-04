@@ -7,7 +7,7 @@
 
 ## Architecture (ingestion)
 
-La partie ingestion regroupe les scripts d’ingestion qui alimentent Kafka à partir de différentes sources (HTTP batch et MQTT). Ils produisent des messages géolocalisés prêts à être consommés par la pipeline (Flink, MobilityDB/PostGIS, WebSocket vers Deck.gl).
+The ingestion part groups the ingestion scripts that feed Kafka from different sources (HTTP batch and MQTT). They produce geolocated messages ready to be consumed by the pipeline (Flink, MobilityDB/PostGIS, WebSocket to Deck.gl).
 ```
 [Clients HTTP/JSON] ──> Flask API (/ingest/location) ──> Kafka (locations_topic)
                                      
@@ -16,33 +16,33 @@ La partie ingestion regroupe les scripts d’ingestion qui alimentent Kafka à p
 [Appareils / IoT / OwnTracks] ──> MQTT ──> Kafka (locations_topic)
 ```
 
-## Prérequis
+## Prerequisites
 
 - Python 3.10+
-- Accès à un cluster Kafka (ex. `localhost:9092`)
-- (Optionnel) Un broker MQTT (ex. `localhost:1883`) si utilisation de passerelles MQTT
+- Access to a Kafka cluster (e.g. `localhost:9092`)
+- (Optional) An MQTT broker (e.g. `localhost:1883`) if using MQTT bridges
 
-Installez les dépendances :
+Install dependencies:
 
 ```bash
 pip install flask kafka-python paho-mqtt requests
 ```
 
 
-### 1) API HTTP — ingestion batch
+### 1) HTTP API — batch ingestion
 
-Lance l’API Flask qui accepte des listes d'objets avec leurs trajectoires, puis pousse chaque point sur Kafka.
+Runs the Flask API that accepts lists of objects with their trajectories, then pushes each point to Kafka.
 
-Variables d’environnement :
+Environment variables:
 
-| Variable        | Par défaut           | Description                               |
+| Variable        | Default           | Description                               |
 |-----------------|----------------------|-------------------------------------------|
 | `KAFKA_BROKERS` | `localhost:9092`     | Liste de brokers Kafka                    |
 | `KAFKA_TOPIC`   | `locations_topic`    | Topic de sortie                           |
-| `FLASK_HOST`    | `0.0.0.0`            | Hôte d’écoute                             |
-| `FLASK_PORT`    | `5000`               | Port HTTP                                 |
+| `FLASK_HOST`    | `0.0.0.0`            | Listening host                             |
+| `FLASK_PORT`    | `5000`               | HTTP port                                 |
 
-Exécution (export optionnel si valeur par défaut déjà présente dans l'implémentation):
+Execution (export optional if default values are already present in the implementation):
 
 ```bash
 export KAFKA_BROKERS="localhost:9092"
@@ -52,7 +52,7 @@ export FLASK_PORT=5000
 python http_ingestion_api.py
 ```
 
-Ex de requête (le mode historique doit être activé dans la visualisation pour voir d'anciennes données):
+Example request (historical mode must be enabled in the visualization to see old data):
 
 ```bash
 curl -X POST "http://localhost:5000/ingest/location"   -H "Content-Type: application/json"   -d '[{
@@ -62,17 +62,17 @@ curl -X POST "http://localhost:5000/ingest/location"   -H "Content-Type: applica
       }]'
 ```
 
-Réponse attendue (202) :
+Expected response (202):
 
 ```json
 {"status":"ok","sent":2,"message":"Points sent to processing pipeline"}
 ```
 
-### 1.1) MQTT → Kafka — bridge **avancé** (OwnTracks + custom)
+### 1.1) MQTT → Kafka — **advanced** bridge (OwnTracks + custom)
 
-Variables d’environnement clés :
+Key environment variables:
 
-| Variable               | Par défaut                                  | Exemple                         |
+| Variable               | Default                                  | Exemple                         |
 |------------------------|----------------------------------------------|----------------------------------|
 | `KAFKA_BROKERS`        | `localhost:9092`                            | `broker1:9092,broker2:9092`     |
 | `KAFKA_TOPIC`          | `locations_topic`                           | `locations_topic`               |
@@ -83,22 +83,22 @@ Variables d’environnement clés :
 | `MQTT_USERNAME`        | *(vide)*                                    | `user1`                         |
 | `MQTT_PASSWORD`        | *(vide)*                                    | `****`                          |
 
-Exécution :
+Execution:
 
 ```bash
 python mqtt.py
 ```
 
-Le bridge :
-- s’abonne à plusieurs filtres (ex. OwnTracks et/ou vos topics métier) ;
-- extrait `vehicleID` depuis le topic si absent du payload (p. ex. `owntracks/{user}/{device}`, `devices/{id}/...`) ;
-- mappe automatiquement les payloads OwnTracks (`lat`, `lon`, `tst`) vers le schéma commun.
+The bridge:
+- subscribes to multiple filters (e.g. OwnTracks and/or your business topics);
+- extracts `vehicleID` from the topic if missing from the payload (e.g. `owntracks/{user}/{device}`, `devices/{id}/...`);
+- automatically maps OwnTracks payloads (`lat`, `lon`, `tst`) to the common schema.
 
-### 1.2) MQTT → Kafka — bridge **custom** (only custom)
+### 1.2) MQTT → Kafka — **custom** bridge (only custom)
 
-Variables d’environnement :
+Environment variables:
 
-| Variable             | Par défaut            |
+| Variable             | Default            |
 |----------------------|-----------------------|
 | `KAFKA_BROKERS`      | `localhost:9092`      |
 | `KAFKA_TOPIC`        | `locations_topic`     |
@@ -109,19 +109,19 @@ Variables d’environnement :
 | `MQTT_USERNAME`      | *vide*                |
 | `MQTT_PASSWORD`      | *vide*                |
 
-Exécution :
+Execution:
 
 ```bash
 python mqtt_custom_bridge.py
 ```
 
-### 1.3) Envoi de datasets — `dataset_loader.py`
+### 1.3) Sending datasets — `dataset_loader.py`
 
-Lit un JSON, regroupe par `vehicleID`, et envoie vers l’API HTTP (voir point 1).
+Reads a JSON file, groups by `vehicleID`, and sends it to the HTTP API (see point 1).
 
-Variables & options :
-- `API_URL` (modifiez dans le script si nécessaire, par défaut `http://localhost:5000/ingest/location`)
-- `batch_size` (dans le script, par défaut `500`)
+Variables & options:
+- `API_URL` (modifiez dans le script si nécessaire, par default `http://localhost:5000/ingest/location`)
+- `batch_size` (dans le script, par default `500`)
 
 Usage :
 
@@ -129,7 +129,7 @@ Usage :
 python dataset_loader.py states_2018-05-28-00.json
 ```
 
-Output :
+Output:
 ```
 reading ./data/dataset_sample.json...
 processing 12345 flights...
@@ -139,9 +139,9 @@ sending final batch 3 (123 objects)...
 done. total points sent: 98765
 ```
 
-## Contrats d’entrée (HTTP)
+## Input contracts (HTTP)
 
-**Requete (liste d'objets) :**
+**Request (list of objects):**
 ```json
 [
   {
@@ -154,57 +154,57 @@ done. total points sent: 98765
 
 ## Dev
 
-- Activez un venv et installez les paquets listés plus haut.
-- Exécutez Kafka en local et créez `locations_topic`.
+- Activate a venv and install the packages listed above.
+- Run Kafka locally and create `locations_topic`.
 
 
 
 
 ## 2) Flink 2.0 (Kafka → MobilityDB & Kafka WS)
 
-Ce job **PyFlink Table API** consomme le topic Kafka d’ingestion, nettoie les enregistrements, ensuite :
-- **insère** chaque point (TGeogPoint) dans **MobilityDB/Postgresql** via un sink **JDBC** ;
-- **publie** aussi un message JSON minimal vers un second topic Kafka destiné au **WebSocket server**.
+This **PyFlink Table API** job consumes the Kafka ingestion topic, cleans the records, then:
+- **inserts** each point (TGeogPoint) into **MobilityDB/Postgresql** via a **JDBC** sink;
+- **also publishes** a minimal JSON message to a second Kafka topic intended for the **WebSocket server**.
 
 ### Script
-- Fichier : `flink.py` 
+- File: `flink.py` 
 - Sinks → `jdbc_point_event_sink` (table `vehicle_locations_temporal_insert_view`) et `kafka_sink_ws`
 
-### Initialisation base de données (a executer avant Flink)
+### Database initialization (to be executed before Flink)
 
-Avant de lancer le job Flink, **exécutez le script SQL** qui crée/initialise les objets nécessaires (tables/vues/insert view) dans PostgreSQL/MobilityDB.
+Before running the Flink job, **execute the SQL script** that creates/initializes the required objects (tables/views/insert view) in PostgreSQL/MobilityDB.
 
-- Fichier actuel : `flink_tables.sql`
+- Current file: `flink_tables.sql`
 
 
-### Connecteurs requis (Flink 2.0)
-Les connecteurs **ne sont pas inclus** ajoutez les JARs correspondants dans `$FLINK_HOME/lib` :
+### Required connectors (Flink 2.0)
+The connectors **are not included** add the corresponding JARs into `$FLINK_HOME/lib`:
 - **Kafka SQL connector** : `flink-connector-kafka` (version **4.0.x-2.0**, ex. `4.0.0-2.0`)
 - **JDBC SQL connector (core + Postgres)** : `flink-connector-jdbc-core` et `flink-connector-jdbc-postgres` (version **4.0.x-2.0**)
 
-Liens utile:
+Useful links:
 - **Apache Flink 2.0.0** : https://downloads.apache.org/flink/flink-2.0.0/
 - **Kafka SQL connector** : https://mvnrepository.com/artifact/org.apache.flink/flink-connector-kafka/4.0.0-2.0
 - **JDBC postgresql connector** : https://mvnrepository.com/artifact/org.apache.flink/flink-connector-jdbc-postgres/4.0.0-2.0
 - **JDBC core connector** : https://mvnrepository.com/artifact/org.apache.flink/flink-connector-jdbc-core/4.0.0-2.0
 
-### Variables d’environnement (a adapter)
-- `KAFKA_BROKERS` (défaut `localhost:9092`)
-- `KAFKA_TOPIC` (source, par défaut `locations_topic`)
-- `KAFKA_WEBSOCKET_TOPIC` (sink, defaut `websocket_updates_topic`)
+### Environment variables (to be adapted)
+- `KAFKA_BROKERS` (default `localhost:9092`)
+- `KAFKA_TOPIC` (source, par default `locations_topic`)
+- `KAFKA_WEBSOCKET_TOPIC` (sink, default `websocket_updates_topic`)
 - `JDBC_URL` (ex. `jdbc:postgresql://localhost:5432/mobilityTest`) 
 - `JDBC_USERNAME`, `JDBC_PASSWORD`, `JDBC_DRIVER` (ex. `org.postgresql.Driver`)
 
-### Lancement en local (exemple)
+### Local execution (example)
 ```bash
-# 1) Démarrer un cluster Flink
+# 1) Start a Flink cluster
 $FLINK_HOME/bin/start-cluster.sh
 
-# 2) (Optionnel) Activer un venv & PyFlink compatible
+# 2) (Optional) Activate a venv & compatible PyFlink
 python -m venv .venv && source .venv/bin/activate
 pip install 'apache-flink==2.0.*'
 
-# 4) Soumettre le job PyFlink (export optionel si variable par défaut)
+# 4) Soumettre le job PyFlink (export optionel si variable par default)
 export KAFKA_BROKERS="localhost:9092"
 export KAFKA_TOPIC="locations_topic"
 export KAFKA_WEBSOCKET_TOPIC="websocket_updates_topic"
@@ -216,30 +216,30 @@ export JDBC_DRIVER="org.postgresql.Driver"
 $FLINK_HOME/bin/flink run -py flink.py
 ```
 
-### Validation & débit
-- Le job applique des **UDFs** de normalisation (`vehicleID`, timestamp multi-unités) et **validations** de coordonnées.
-- **Watermarks** basés sur l’event-time avec un **retard** configuré (par défaut 10 s) pour tolérer un léger retard réseau.
-- **Flush JDBC** : tampon configuré afin d’équilibrer latence et débit.
+### Validation & throughput
+- The job applies **UDFs** for normalization (`vehicleID`, multi-unit timestamps) and **coordinate validations**.
+- **Watermarks** basés sur l’event-time avec un **retard** configuré (par default 10 s) pour tolérer un léger retard réseau.
+- **Flush JDBC**: buffer configured to balance latency and throughput.
 
-**Sortie (JDBC → MobilityDB)** : insertion de `(vehicle_id, timestamp_ms, tgeogpoint_text)` dans `vehicle_locations_temporal_insert_view`.
-
-
+**Output (JDBC → MobilityDB)**: insertion of `(vehicle_id, timestamp_ms, tgeogpoint_text)` into `vehicle_locations_temporal_insert_view`.
 
 
 
-## 3) Serveur WebSocket
-Le serveur lit le topic Kafka **`websocket_updates_topic`** produit par Flink et relaye chaque message aux clients connectés
 
-**Dépendances** : `websockets`, `aiokafka`
 
-### Variables d’environnement
-| Variable                | Par défaut                | Description                              |
+## 3) WebSocket server
+The server reads the Kafka topic **`websocket_updates_topic`** produced by Flink and relays each message to connected clients
+
+**Dependencies** : `websockets`, `aiokafka`
+
+### Environment variables
+| Variable                | Default                | Description                              |
 |-------------------------|---------------------------|------------------------------------------|
 | `KAFKA_BROKERS`         | `localhost:9092`          | Brokers Kafka          
 | `KAFKA_WEBSOCKET_TOPIC` | `websocket_updates_topic` | Topic consommé par le serveur WS 
 | `KAFKA_GROUP_ID`        | *(auto)*                  | (Optionnel) GroupId du consumer Kafka
-| `WEBSOCKET_HOST`        | `0.0.0.0`                 | Hôte d’écoute 
-| `WEBSOCKET_PORT`        | `8082`                    | Port d’écoute
+| `WEBSOCKET_HOST`        | `0.0.0.0`                 | Listening host 
+| `WEBSOCKET_PORT`        | `8082`                    | Listening port
 
 ### Installation
 
@@ -252,17 +252,17 @@ export WEBSOCKET_HOST="0.0.0.0"
 export WEBSOCKET_PORT=8082
 
 python websocket_server.py
-# Le serveur écoute sur 0.0.0.0:8082
+# The server listens on 0.0.0.0:8082
 ```
 
 
 
 
 ## 4) Deck.gl
-L’application Deck.gl se connecte au **WebSocket** pour recevoir les mises à jour et les affich
+The Deck.gl application connects to the **WebSocket** to receive updates and display them
 
 
-### Installation & lancement
+### Installation & run
 ```
 npm install
 npm start
